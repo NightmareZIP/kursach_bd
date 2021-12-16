@@ -90,42 +90,6 @@ class Text_window(ttk.Frame):
 
         self.execute(f_command)
 
-    # def run_mod(self):
-    #     self.mod.pack_forget()
-    #     self.mod.destroy()#уничтожаем старый фрейм
-    #     self.mod = Frame(self, width = 300)
-    #     conf = modules[t.get()][m.get()] #Первый элемент - текст, который будет выведен, второй - модуль, который будет запущен
-    #     func = conf[1]
-    #     l_name = Label(self.mod, text = m.get())
-    #     l_describe = Label(self.mod, text = conf[0])
-    #     ent = Text(self.mod, height = 10)
-    #     l_res = Text(self.mod)
-    #     b = Button(self.mod, text = "Get result", command = lambda : self.run_func(func, ent.get(1.0, END), l_res))
-    #     #r = Label(self.mod, text = "reuslt")
-    #     self.mod.pack(fill = BOTH, side = LEFT, expand =1)
-
-    #     l_name.pack()
-    #     l_describe.pack()
-    #     ent.pack()
-    #     b.pack()
-    #     l_res.pack(anchor = W)
-
-    # def run_func(self, func, ent, l_res):
-    #     ent = re.sub('[\s\s+]|,', ' ', ent)
-    #     #ent = re.sub('[/]', ' ', ent)
-    #     ent = ent.split()
-    #     print(ent)
-    #     res = -1
-    #     try :res = func(*ent)
-    #     except:
-    #         l_res.delete(1.0, END)
-
-    #         l_res.insert(END, "ERROR! CHECK YOUR INPUT!")
-    #     else:
-    #         l_res.delete(1.0, END)
-
-    #         l_res.insert(END, "Ответ: " + res)
-    #         print(res)
 
 
 class Types(ttk.Frame):
@@ -137,12 +101,8 @@ class Types(ttk.Frame):
         self.master = master
         self.mod_f = Frame(master)
 
-        #style = ttk.Style(self)
-        #style.configure('lefttab.TNotebook', tabposition='wn')
-        #notebook = ttk.Notebook(master, style='lefttab.TNotebook')
-        #maximum = max([len(i) for i in modules.keys()])
+       
         l_f = Frame(self, background='red')
-        # scrollbar = Scrollbar(self)
         queries = {
             "Список услуг": {
                 'command':
@@ -226,17 +186,14 @@ class Types(ttk.Frame):
         }
         buttons = []
         for button in queries.keys():
-            # print(queries[button])
             opt = queries[button]
             action_with_arg = partial(self.create_request_section, opt)
             r = Button(l_f, text=button, command=action_with_arg)
-            # r = Radiobutton(l_f, text = 'AAA', variable = t, value = i, indicatoron=0, command = self.new_list )
             r.pack(side=TOP, fill=BOTH, expand=1)
 
         l_f.pack(side=LEFT, fill=BOTH)
 
     def create_request_section(self, options):
-        # print(options)
         if self.is_w:
             self.w.pack_forget()
             self.w.destroy()
@@ -247,12 +204,6 @@ class Types(ttk.Frame):
         self.w.pack(fill=BOTH, expand=1, side=RIGHT)
         self.is_w = True
 
-    # def new_list(self):
-    #     print("called")
-    #     self.mod_f.pack_forget()
-    #     self.mod_f.destroy()#уничтожаем старый фрейм
-    #     self.mod_f = Mods(self)
-    #     self.mod_f.pack(fill = Y, side = LEFT, expand = 1, anchor = W)
 
 
 class Main_application(ttk.Frame):
@@ -275,11 +226,9 @@ data = {
 db = sql_test.DB(data)
 root = Tk()
 root.title("Автосервис")
-#root.attributes('-fullscreen', True)
 t = StringVar()
 m = StringVar()
 
-# root.geometry('400x400')
 root.minsize(800, 400)
 
 app = Main_application(root, DB=db)
