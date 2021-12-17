@@ -8,10 +8,7 @@ class DB:
         try:
             self.mydb = mysql.connector.connect(
                 **self.data
-                # host="127.0.0.1",
-                # user="root",
-                # password="Batman74",
-                # database="autoservice"
+               
             )
             self.mydb.close()
 
@@ -23,10 +20,7 @@ class DB:
         try:
             self.mydb = mysql.connector.connect(
                 **self.data
-                # host="127.0.0.1",
-                # user="root",
-                # password="Batman74",
-                # database="autoservice"
+                
             )
             self.mycursor = self.mydb.cursor()
 

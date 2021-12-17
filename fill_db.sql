@@ -1,5 +1,6 @@
 USE autoservice;
 #TEST
+/*
 INSERT INTO cars (owner_id, name, car_number)
     VALUES
     (3,"Mark-4", "4");
@@ -13,6 +14,7 @@ SELECT * FROM order_services;
 INSERT INTO order_services (order_id, service_id, master_id)
 	VALUES
 		(5, 1, 3);
+*/
 #END_TEST
 INSERT INTO clients (name, second_name, last_name, phone_number)
     VALUES("Люк", "Скайвокер", "Энакинович", "88005553535"), 
