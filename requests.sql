@@ -37,7 +37,7 @@ FROM services, (SELECT order_services.service_id, order_car.order_id, order_car.
  
 
  #Выбор проделанной мастером работы а период
- SELECT orders.id, services.name, services.price, orders.creation_date, orders.final_date
+ SELECT orders.id, services.price, orders.creation_date, orders.final_date
  FROM services, orders, (SELECT service_id, order_id 
 						 FROM order_services  
 						WHERE master_id = (SELECT id 

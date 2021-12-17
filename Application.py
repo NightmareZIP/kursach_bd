@@ -27,7 +27,11 @@ class Text_window(ttk.Frame):
 
         self.text_w = True
         columns, res = self.DB.execute(formated_command)
-
+        columns, res = self.DB.execute(formated_command)
+        if columns == -1:
+            messagebox.showinfo("Ошибка", "Проверьте данные")
+            self.text_w = False
+            return
         self.l_res = ttk.Treeview(self, show="headings")
         self.l_res['columns'] = columns
 
@@ -91,9 +95,8 @@ class Text_window(ttk.Frame):
         self.execute(f_command)
 
 
-
 class Types(ttk.Frame):
-    def __init__(self, master, *args, DB, **kwargs):
+    def __init__(self, master, *args, DB, queries, **kwargs):
 
         super().__init__(master, *args, **kwargs)
         self.DB = DB
@@ -101,89 +104,8 @@ class Types(ttk.Frame):
         self.master = master
         self.mod_f = Frame(master)
 
-       
         l_f = Frame(self, background='red')
-        queries = {
-            "Список услуг": {
-                'command':
-                "SELECT name, price FROM services GROUP BY name, price;",
-                'is_input': False
-            },
-            "Список машин": {
-                'command': "SELECT * FROM cars;",
-                'is_input': False
-            },
-            "Информация о машине": {
-                'command': """SELECT * FROM services
-                                WHERE id IN	(SELECT service_id FROM order_services
-                                    WHERE order_id IN (SELECT id FROM orders
-                                        WHERE  car_id = (SELECT id FROM cars
-                                                                WHERE id = '{}')));""",
-                'is_input': {
-                    'select': {
-                        'label': 'Выберите машину',
-                        'entity': 'cars',
-                        'fields': ['id', 'name', 'car_number'],
-                        'checkboxes': (())
-                    }
-                }
-            },
-            "Информация о работе мастера за период": {
-                'command':
-                """ SELECT orders.id, services.name, services.price, orders.creation_date, orders.final_date
-                    FROM services, orders, (SELECT service_id, order_id 
-						 FROM order_services  
-						WHERE master_id = (SELECT id 
-										   FROM masters
-										    WHERE masters.id = {})
-						) AS cur_s_o
-                    WHERE services.id = cur_s_o.service_id
-                    AND
-                    orders.id = cur_s_o.order_id
-                    AND 
-                    orders.final_date IS NOT NULL
-                    AND 
-                    orders.final_date BETWEEN DATE_SUB(NOW(), INTERVAL {} DAY) AND NOW() ;""",
-                'is_input': {
-                    'select': {
-                        'label':
-                        'Выберите период и мастера',
-                        'entity':
-                        'masters',
-                        'fields': ['id', 'name', 'second_name', 'last_name'],
-                        'checkboxes': (('день', 1), ('месяц', 30),
-                                       ('квартал', 91), ('год', 365))
-                    }
-                }
-            },
-            "Рассчет стоимости услуг": {
-                'command':
-                """SELECT  o_c_s.order_id, o_c_s.car_number, services.name, SUM(services.price) as sum  
-                                            FROM services, (SELECT order_services.service_id, order_car.order_id, order_car.name, order_car.car_number 
-                                                            FROM order_services, (SELECT orders.id as order_id , selected_cars.name, selected_cars.car_number 
-                                                                                FROM orders, (SELECT  cars.id, cars.name, cars.car_number  
-                                                                                                FROM cars
-                                                                                                WHERE cars.id IN (SELECT id 
-                                                                                                                FROM cars 
-                                                                                                                WHERE owner_id IN (SELECT id 
-                                                                                                                                    FROM clients
-                                                                                                                                    WHERE clients.id = {}))
-                                                                                            ) AS selected_cars
-                                                                                WHERE orders.car_id = selected_cars.id
-                                                                                ) AS order_car
-                                                            WHERE order_car.order_id = order_services.order_id) AS o_c_s
-                                                WHERE services.id = o_c_s.service_id
-                                                GROUP BY o_c_s.order_id;""",
-                'is_input': {
-                    'select': {
-                        'label': 'Выберите клиента',
-                        'entity': 'clients',
-                        'fields': ['id', 'name', 'second_name', 'last_name'],
-                        'checkboxes': (())
-                    }
-                }
-            },
-        }
+
         buttons = []
         for button in queries.keys():
             opt = queries[button]
@@ -205,32 +127,244 @@ class Types(ttk.Frame):
         self.is_w = True
 
 
-
 class Main_application(ttk.Frame):
-    def __init__(self, master, DB, *args, **kwargs):
+    def __init__(self, master, *args, **kwargs):
 
         super().__init__(master, *args, **kwargs)
 
         self.master = master
+        self.chose_f = Frame(self)
 
-        f = Types(self, DB=db)
-        f.pack(fill=BOTH, side=LEFT)
+        a_action_with_arg = partial(self.click_callback, 'admin')
+        a_button = Button(self.chose_f,
+                          text='Зайти под админом',
+                          command=a_action_with_arg)
+        a_button.pack(side=TOP, fill=BOTH, expand=1)
+
+        s_m_action_with_arg = partial(self.click_callback, 's_m')
+        s_m_button = Button(self.chose_f,
+                            text='Зайти под менеджером персонала',
+                            command=s_m_action_with_arg)
+        s_m_button.pack(side=TOP, fill=BOTH, expand=1)
+
+        c_m_action_with_arg = partial(self.click_callback, 'admin')
+        c_m_button = Button(self.chose_f,
+                            text='Зайти под менеджером клиентов',
+                            command=c_m_action_with_arg)
+        c_m_button.pack(side=TOP, fill=BOTH, expand=1)
+        self.chose_f.pack(side=TOP, fill=BOTH, expand=1, anchor=CENTER)
+
+    def eneter_db(self, login, password):
+        data = {
+            'host': "127.0.0.1",
+            'user': login,
+            'password': password,
+            'database': "autoservice"
+        }
+        return sql_test.DB(data)
+
+    def click_callback(self, mode):
+        self.chose_f.pack_forget()
+        self.chose_f.destroy()
+        if mode == 'admin':
+            login = 'root'
+            password = 'qwerty123'
+            queries = {
+                "Список услуг": {
+                    'command':
+                    "SELECT name, price FROM services GROUP BY name, price;",
+                    'is_input': False
+                },
+                "Список машин": {
+                    'command': "SELECT * FROM cars;",
+                    'is_input': False
+                },
+                "Информация о машине": {
+                    'command': """SELECT * FROM services
+                                WHERE id IN	(SELECT service_id FROM order_services
+                                    WHERE order_id IN (SELECT id FROM orders
+                                        WHERE  car_id = (SELECT id FROM cars
+                                                                WHERE id = '{}')));""",
+                    'is_input': {
+                        'select': {
+                            'label': 'Выберите машину',
+                            'entity': 'cars',
+                            'fields': ['id', 'name', 'car_number'],
+                            'checkboxes': (())
+                        }
+                    }
+                },
+                "Информация о работе мастера за период": {
+                    'command':
+                    """ SELECT orders.id, services.name, services.price, orders.creation_date, orders.final_date
+                    FROM services, orders, (SELECT service_id, order_id 
+						 FROM order_services  
+						WHERE master_id = (SELECT id 
+										   FROM masters
+										    WHERE masters.id = {})
+						) AS cur_s_o
+                    WHERE services.id = cur_s_o.service_id
+                    AND
+                    orders.id = cur_s_o.order_id
+                    AND 
+                    orders.final_date IS NOT NULL
+                    AND 
+                    orders.final_date BETWEEN DATE_SUB(NOW(), INTERVAL {} DAY) AND NOW() ;""",
+                    'is_input': {
+                        'select': {
+                            'label':
+                            'Выберите период и мастера',
+                            'entity':
+                            'masters',
+                            'fields':
+                            ['id', 'name', 'second_name', 'last_name'],
+                            'checkboxes': (('день', 1), ('месяц', 30),
+                                           ('квартал', 91), ('год', 365))
+                        }
+                    }
+                },
+                "Рассчет стоимости услуг": {
+                    'command':
+                    """SELECT  o_c_s.order_id, o_c_s.car_number, SUM(services.price) as sum  
+                                            FROM services, (SELECT order_services.service_id, order_car.order_id, order_car.name, order_car.car_number 
+                                                            FROM order_services, (SELECT orders.id as order_id , selected_cars.name, selected_cars.car_number 
+                                                                                FROM orders, (SELECT  cars.id, cars.name, cars.car_number  
+                                                                                                FROM cars
+                                                                                                WHERE cars.id IN (SELECT id 
+                                                                                                                FROM cars 
+                                                                                                                WHERE owner_id IN (SELECT id 
+                                                                                                                                    FROM clients
+                                                                                                                                    WHERE clients.id = {}))
+                                                                                            ) AS selected_cars
+                                                                                WHERE orders.car_id = selected_cars.id
+                                                                                ) AS order_car
+                                                            WHERE order_car.order_id = order_services.order_id) AS o_c_s
+                                                WHERE services.id = o_c_s.service_id
+                                                GROUP BY o_c_s.order_id;""",
+                    'is_input': {
+                        'select': {
+                            'label': 'Выберите клиента',
+                            'entity': 'clients',
+                            'fields':
+                            ['id', 'name', 'second_name', 'last_name'],
+                            'checkboxes': (())
+                        }
+                    }
+                },
+            }
+        elif mode == 's_m':
+            login = 'staff_manager'
+            password = 'staff_manager'
+            queries = {
+                "Список услуг": {
+                    'command':
+                    "SELECT name, price FROM services GROUP BY name, price;",
+                    'is_input': False
+                },
+                "Информация о работе мастера за период": {
+                    'command':
+                    """ SELECT orders.id, services.name, services.price, orders.creation_date, orders.final_date
+                    FROM services, orders, (SELECT service_id, order_id 
+						 FROM order_services  
+						WHERE master_id = (SELECT id 
+										   FROM masters
+										    WHERE masters.id = {})
+						) AS cur_s_o
+                    WHERE services.id = cur_s_o.service_id
+                    AND
+                    orders.id = cur_s_o.order_id
+                    AND 
+                    orders.final_date IS NOT NULL
+                    AND 
+                    orders.final_date BETWEEN DATE_SUB(NOW(), INTERVAL {} DAY) AND NOW() ;""",
+                    'is_input': {
+                        'select': {
+                            'label':
+                            'Выберите период и мастера',
+                            'entity':
+                            'masters',
+                            'fields':
+                            ['id', 'name', 'second_name', 'last_name'],
+                            'checkboxes': (('день', 1), ('месяц', 30),
+                                           ('квартал', 91), ('год', 365))
+                        }
+                    }
+                },
+            }
+        elif mode == 'c_m':
+            login = 'client_manager'
+            password = 'client_manager'
+            queries = {
+                "Список услуг": {
+                    'command':
+                    "SELECT name, price FROM services GROUP BY name, price;",
+                    'is_input': False
+                },
+                "Список машин": {
+                    'command': "SELECT * FROM cars;",
+                    'is_input': False
+                },
+                "Информация о машине": {
+                    'command': """SELECT * FROM services
+                                WHERE id IN	(SELECT service_id FROM order_services
+                                    WHERE order_id IN (SELECT id FROM orders
+                                        WHERE  car_id = (SELECT id FROM cars
+                                                                WHERE id = '{}')));""",
+                    'is_input': {
+                        'select': {
+                            'label': 'Выберите машину',
+                            'entity': 'cars',
+                            'fields': ['id', 'name', 'car_number'],
+                            'checkboxes': (())
+                        }
+                    }
+                },
+                "Рассчет стоимости услуг": {
+                    'command':
+                    """SELECT  o_c_s.order_id, o_c_s.car_number, SUM(services.price) as sum  
+                                            FROM services, (SELECT order_services.service_id, order_car.order_id, order_car.name, order_car.car_number 
+                                                            FROM order_services, (SELECT orders.id as order_id , selected_cars.name, selected_cars.car_number 
+                                                                                FROM orders, (SELECT  cars.id, cars.name, cars.car_number  
+                                                                                                FROM cars
+                                                                                                WHERE cars.id IN (SELECT id 
+                                                                                                                FROM cars 
+                                                                                                                WHERE owner_id IN (SELECT id 
+                                                                                                                                    FROM clients
+                                                                                                                                    WHERE clients.id = {}))
+                                                                                            ) AS selected_cars
+                                                                                WHERE orders.car_id = selected_cars.id
+                                                                                ) AS order_car
+                                                            WHERE order_car.order_id = order_services.order_id) AS o_c_s
+                                                WHERE services.id = o_c_s.service_id
+                                                GROUP BY o_c_s.order_id;""",
+                    'is_input': {
+                        'select': {
+                            'label': 'Выберите клиента',
+                            'entity': 'clients',
+                            'fields':
+                            ['id', 'name', 'second_name', 'last_name'],
+                            'checkboxes': (())
+                        }
+                    }
+                },
+            }
+        db = self.eneter_db(login, password)
+        if not db.is_error:
+            f = Types(self, DB=db, queries=queries)
+            f.pack(fill=BOTH, side=LEFT)
 
 
-data = {
-    'host': "127.0.0.1",
-    'user': "root",
-    'password': "qwerty123",
-    'database': "autoservice"
-}
-db = sql_test.DB(data)
+# data = {
+#     'host': "127.0.0.1",
+#     'user': "root",
+#     'password': "qwerty123",
+#     'database': "autoservice"
+# }
+# db = sql_test.DB(data)
 root = Tk()
 root.title("Автосервис")
-t = StringVar()
-m = StringVar()
 
 root.minsize(800, 400)
-
-app = Main_application(root, DB=db)
+app = Main_application(root)
 app.pack(fill=BOTH, expand=1)
 root.mainloop()

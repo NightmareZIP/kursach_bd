@@ -13,17 +13,22 @@ class DB:
                 # database="autoservice"
             )
             self.mycursor = self.mydb.cursor()
-        except Error as e:
+        except:
             self.is_error = True
-            return send_error(error)
+            return "Connetction error"
 
     def send_error(self, error):
         return error
 
     def execute(self, command):
-        self.mycursor.execute(command)
-        myresult = self.mycursor.fetchall()
-        res = ''
-        headers = self.mycursor.column_names
+        try:
+            self.mycursor.execute(command)
+            myresult = self.mycursor.fetchall()
+            res = ''
+            headers = self.mycursor.column_names
 
-        return headers, myresult
+        except:
+            print("Something else went wrong")
+            return -1, 'ERROR'
+        else:
+            return headers, myresult
