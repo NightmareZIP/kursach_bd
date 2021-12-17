@@ -3,32 +3,50 @@ import mysql.connector
 
 class DB:
     def __init__(self, data):
+        self.data = data
         self.is_error = False
         try:
             self.mydb = mysql.connector.connect(
-                **data
+                **self.data
+                # host="127.0.0.1",
+                # user="root",
+                # password="Batman74",
+                # database="autoservice"
+            )
+            self.mydb.close()
+
+        except:
+            self.is_error = True
+            return "Connetction error"
+
+    def execute(self, command):
+        try:
+            self.mydb = mysql.connector.connect(
+                **self.data
                 # host="127.0.0.1",
                 # user="root",
                 # password="Batman74",
                 # database="autoservice"
             )
             self.mycursor = self.mydb.cursor()
+
         except:
             self.is_error = True
             return "Connetction error"
-
-    def send_error(self, error):
-        return error
-
-    def execute(self, command):
         try:
             self.mycursor.execute(command)
+            if 'INSERT' in command: self.mydb.commit()
+
             myresult = self.mycursor.fetchall()
             res = ''
             headers = self.mycursor.column_names
 
-        except:
-            print("Something else went wrong")
+        except Exception as e:
+            print("Something else went wrong\n", e)
+            if 'INSERT' in command:  self.mydb.rollback()
+
             return -1, 'ERROR'
         else:
+            self.mydb.close()
+
             return headers, myresult
