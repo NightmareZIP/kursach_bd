@@ -354,13 +354,7 @@ class Main_application(ttk.Frame):
             f.pack(fill=BOTH, side=LEFT)
 
 
-# data = {
-#     'host': "127.0.0.1",
-#     'user': "root",
-#     'password': "qwerty123",
-#     'database': "autoservice"
-# }
-# db = sql_test.DB(data)
+
 root = Tk()
 root.title("Автосервис")
 
