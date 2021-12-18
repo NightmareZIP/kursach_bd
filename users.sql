@@ -34,3 +34,6 @@ GRANT SELECT ON autoservice.order_services TO 'client_manager';
 GRANT UPDATE ON autoservice.order_services TO 'client_manager';
 
 GRANT SELECT ON autoservice.services TO 'client_manager';
+GRANT SELECT ON autoservice.masters TO 'client_manager';
+GRANT SELECT ON autoservice.types_masters TO 'client_manager';
+
